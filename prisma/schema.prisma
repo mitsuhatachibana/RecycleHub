@@ -1,0 +1,272 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../app/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id            String            @id @default(uuid())
+  nama          String            @db.VarChar(100)
+  nik           String            @unique @db.VarChar(16)
+  email         String            @unique @db.VarChar(100)
+  noHp          String            @unique @db.VarChar(30)
+  password      String            @db.VarChar(255)
+  fotoProfil    String?           @db.VarChar(255)
+  role          Role              @default(USER)
+  alamat        String?           @db.Text
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+  
+  LaporanSampah LaporanSampah[]
+  Transaksi     Transaksi[]       @relation("UserTransaksi")
+  Poin          Poin?
+  RiwayatLaporan RiwayatLaporan[]
+  Redeems       Redeem[]          @relation("UserRedeem")
+  userWilayah   user_wilayah[]
+
+  @@map("users")
+}
+
+model JenisSampah {
+  id            String          @id @default(uuid())
+  namaJenis     String          @unique @db.VarChar(50)
+  deskripsi     String?
+  hargaPerKg    Float           @default(0)
+  kategoriId    String?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  LaporanSampah LaporanSampah[]
+  kategori      KategoriSampah? @relation(fields: [kategoriId], references: [id], onDelete: Restrict)
+
+  @@map("jenis_sampah")
+}
+
+model Wilayah {
+  id            String          @id @default(uuid())
+  namaWilayah   String          @unique @db.VarChar(100)
+  kodePos       String?         @db.VarChar(10)
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  LaporanSampah LaporanSampah[]
+
+   userWilayah user_wilayah[]
+
+  @@map("wilayah")
+}
+
+model LaporanSampah {
+  id            String        @id @default(uuid())
+  userId        String
+  jenisSampahId String
+  wilayahId     String
+  berat         Float         @default(0)
+  deskripsi     String?
+  tanggalLapor  DateTime      @default(now())
+  status        StatusLaporan @default(MENUNGGU)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  FotoSampah    FotoSampah[]  @relation("LaporanFoto")
+  jenisSampah   JenisSampah   @relation(fields: [jenisSampahId], references: [id], onDelete: Restrict)
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  wilayah       Wilayah       @relation(fields: [wilayahId], references: [id], onDelete: Restrict)
+  Transaksi     Transaksi?    @relation("LaporanTransaksi")
+  RiwayatLaporan RiwayatLaporan[]
+
+  @@map("laporan_sampah")
+}
+
+model FotoSampah {
+  id          String   @id @default(uuid())
+  laporanId   String
+  urlFoto     String
+  deskripsi   String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  laporan     LaporanSampah @relation("LaporanFoto", fields: [laporanId], references: [id], onDelete: Cascade)
+  
+  @@map("FotoSampah")
+}
+
+// Tabel 6: transaksi
+// Mencatat seluruh transaksi jual beli sampah antara user dan sistem.
+// Relasi: Many-to-One ke User (userId), One-to-One ke LaporanSampah (laporanId)
+// Constraint: laporanId UNIQUE (1 laporan hanya bisa ditransaksikan sekali),
+//             userId ON DELETE CASCADE (jika user dihapus, transaksi ikut terhapus)
+model Transaksi {
+  id               String          @id @default(uuid())
+  userId           String
+  laporanId        String          @unique
+  totalHarga       Float
+  status           StatusTransaksi @default(PENDING)
+  tanggalTransaksi DateTime        @default(now())
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+  laporan          LaporanSampah   @relation("LaporanTransaksi", fields: [laporanId], references: [id])
+  user             User            @relation("UserTransaksi", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("transaksi")
+}
+
+enum Role {
+  ADMIN
+  USER
+}
+
+enum StatusLaporan {
+  MENUNGGU
+  DIPROSES
+  SELESAI
+  DITOLAK
+}
+
+enum StatusTransaksi {
+  PENDING
+  SELESAI
+  BATAL
+}
+
+// Tabel 7: kategori_sampah
+// Master data kategori untuk mengelompokkan jenis-jenis sampah (Organik, Anorganik, B3).
+// Relasi: One-to-Many ke JenisSampah
+// Constraint: nama UNIQUE (mencegah duplikasi kategori)
+model KategoriSampah {
+  id            String          @id @default(uuid())
+  nama          String          @unique @db.VarChar(50)
+  deskripsi     String?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  JenisSampah   JenisSampah[]
+
+  @@map("kategori_sampah")
+}
+
+// Tabel 8: poin
+// Menyimpan jumlah poin reward yang diperoleh user dari kegiatan daur ulang.
+// Relasi: One-to-One ke User (userId)
+// Constraint: userId UNIQUE (setiap user hanya punya 1 record poin),
+//             ON DELETE CASCADE (jika user dihapus, poin ikut terhapus)
+model Poin {
+  id          String   @id @default(uuid())
+  userId      String   @unique
+  jumlahPoin  Int      @default(0)
+  totalPoinDikumpulkan Int @default(0)  // Total poin yang pernah dikumpulkan (untuk history)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("poin")
+}
+
+// Tabel 9: pengumuman
+// Menampung pengumuman/informasi penting yang bisa ditampilkan ke seluruh user.
+// Relasi: Tidak ada relasi (standalone table)
+// Constraint: Tidak ada foreign key atau unique constraint selain primary key
+model Pengumuman {
+  id          String   @id @default(uuid())
+  judul       String   @db.VarChar(255)
+  isi         String   @db.Text
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("pengumuman")
+}
+
+// Tabel 10: riwayat_laporan
+// Audit trail: mencatat setiap perubahan status pada laporan sampah.
+// Relasi: Many-to-One ke LaporanSampah (laporanId), Many-to-One ke User (userId)
+// Constraint: ON DELETE CASCADE (jika laporan atau user dihapus, seluruh riwayatnya ikut terhapus),
+//             Validasi statusLama != statusBaru dilakukan di level aplikasi
+model RiwayatLaporan {
+  id            String          @id @default(uuid())
+  laporanId     String
+  userId        String
+  statusLama    StatusLaporan
+  statusBaru    StatusLaporan
+  createdAt     DateTime        @default(now())
+  laporan       LaporanSampah   @relation(fields: [laporanId], references: [id], onDelete: Cascade)
+  user          User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("riwayat_laporan")
+}
+
+// ==================== TAMBAHKAN DI BAWAH MODEL RIWAYAT_LAPORAN ====================
+
+// Tabel 11: reward
+// Menyimpan daftar barang yang bisa ditukar dengan poin (ecopoint)
+// Relasi: Tidak ada relasi langsung (standalone)
+// Constraint: nama UNIQUE (mencegah duplikasi nama reward)
+model Reward {
+  id          String   @id @default(uuid())
+  nama        String   @unique @db.VarChar(100)
+  deskripsi   String?  @db.Text
+  gambar      String?  @db.VarChar(255)   // URL gambar reward
+  poin        Int      @default(0)         // Poin yang dibutuhkan untuk tukar
+  stok        Int      @default(0)         // Jumlah stok tersedia
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  Redeems     Redeem[] @relation("RewardRedeem")
+
+  @@map("rewards")
+}
+
+// Tabel 12: redeem
+// Mencatat riwayat penukaran poin menjadi reward
+// Relasi: Many-to-One ke User (userId), Many-to-One ke Reward (rewardId)
+// Constraint: ON DELETE CASCADE (jika user/reward dihapus, riwayat ikut terhapus)
+model Redeem {
+  id                String   @id @default(uuid())
+  userId            String
+  rewardId          String
+  poinDigunakan     Int      @default(0)
+  status            StatusRedeem @default(PENDING)
+  tanggalRedeem     DateTime @default(now())
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  tipePembayaran    TipePembayaran? @default(CASH)
+  metodePembayaran  String? @default("cash")
+  statusPembayaran  StatusPembayaran @default(BELUM_BAYAR)
+  tanggalJatuhTempo DateTime?
+  buktiPembayaran   String?
+  catatan           String?
+
+  user        User     @relation("UserRedeem", fields: [userId], references: [id], onDelete: Cascade)
+  reward      Reward   @relation("RewardRedeem", fields: [rewardId], references: [id], onDelete: Cascade)
+
+  @@map("redeem")
+}
+
+enum StatusRedeem {
+  PENDING
+  DIPROSES
+  SELESAI
+  BATAL
+}
+
+enum TipePembayaran {
+  CASH
+  KREDIT
+}
+
+enum StatusPembayaran {
+  BELUM_BAYAR
+  LUNAS
+  JATUH_TEMPO
+}
+
+model user_wilayah {
+  id          String   @id @default(uuid())
+  userId      String
+  wilayahId   String
+  createdAt   DateTime @default(now())
+
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  wilayah     Wilayah  @relation(fields: [wilayahId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, wilayahId])
+  @@map("user_wilayah")
+}

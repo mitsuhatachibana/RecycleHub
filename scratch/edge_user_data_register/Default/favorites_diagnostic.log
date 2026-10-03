@@ -1,0 +1,12 @@
+2026-10-01 06:01:43.950: [INFO] CurrentProfilePath: D:\recyclehub\scratch\edge_user_data_register\Default
+2026-10-01 06:01:43.950: [INFO] Profiles total count: 1
+2026-10-01 06:01:43.950: [INFO] Profile: name=Profile 1 path=D:\recyclehub\scratch\edge_user_data_register\Default lastActive=2026-10-01T06:01:43.933Z
+2026-10-01 06:01:43.950: [INFO] LastUsedProfileDir: D:\recyclehub\scratch\edge_user_data_register\Default
+2026-10-01 06:01:43.950: [INFO] MostRecentlyActiveProfile: name=Profile 1 path=D:\recyclehub\scratch\edge_user_data_register\Default lastActive=2026-10-01T06:01:43.933Z
+2026-10-01 06:01:43.950: [INFO] OnDoneLoading sync enabled: 0
+2026-10-01 06:01:43.950: [INFO] BookmarkModelLoaded, ids_reassigned: 0
+2026-10-01 06:01:43.950: [INFO] BookmarksLoadDropped droppedNodes=0
+2026-10-01 06:01:43.950: [INFO] BookmarksSnapshot Startup total=3 bar=3 other=0 mobile=0 showBar=0 showBarNTP=1
+2026-10-01 06:01:43.953: [INFO] RecordSyncInitDuration has_sync_been_enabled: 0 state: 0
+2026-10-01 06:01:44.296: [INFO] VisibilityChanged: 0
+2026-10-01 06:01:46.556: [INFO] BookmarksSnapshot Shutdown total=3 bar=3 other=0 mobile=0 showBar=0 showBarNTP=1

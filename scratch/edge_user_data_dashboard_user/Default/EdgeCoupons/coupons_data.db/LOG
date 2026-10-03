@@ -1,0 +1,5 @@
+2026/10/01-13:01:53.504 8e54 Creating DB D:\recyclehub\scratch\edge_user_data_dashboard_user\Default\EdgeCoupons/coupons_data.db since it was missing.
+2026/10/01-13:01:53.517 8e54 Reusing MANIFEST D:\recyclehub\scratch\edge_user_data_dashboard_user\Default\EdgeCoupons/coupons_data.db/MANIFEST-000001
+2026/10/01-13:02:06.809 6d18 Level-0 table #5: started
+2026/10/01-13:02:06.812 6d18 Level-0 table #5: 683273 bytes OK
+2026/10/01-13:02:06.814 6d18 Delete type=0 #3
